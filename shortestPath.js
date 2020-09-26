@@ -131,8 +131,17 @@ function determineDirection(boardWidth, boardHeight, head, food, bodies, snakes)
       move = 'right';
     }
   } else {
-    var possibleMoves = ['up', 'down', 'left', 'right']
-    move = possibleMoves[Math.floor(Math.random() * possibleMoves.length)]
+    var dirsString = ['up', 'down', 'left', 'right'];
+    var board = createBoard(boardWidth, boardHeight, bodies, snakes);
+    var dirs = [[1, 0], [-1, 0], [0, -1], [0, 1]];
+    for (var i = 0; i < dirs.length; ++i) {
+      var nx = head.x + dirs[i][1];
+      var ny = head.y + dirs[i][0];
+      if (isInBound(nx, ny, boardWidth, boardWidth) && !board[nx][ny]) {
+        move = dirsString[i];
+        break;
+      }
+    }
   }
   return move;
 }
