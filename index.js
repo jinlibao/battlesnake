@@ -1,3 +1,5 @@
+const shortestPath = require('./shortestPath.js');
+
 const bodyParser = require('body-parser')
 const express = require('express')
 
@@ -17,8 +19,8 @@ app.listen(PORT, () => console.log(`Battlesnake Server listening at http://127.0
 function handleIndex(request, response) {
   var battlesnakeInfo = {
     apiversion: '1',
-    author: '',
-    color: '#888888',
+    author: 'Libao Jin & Yanbin Gong',
+    color: 'green',
     head: 'default',
     tail: 'default'
   }
@@ -28,6 +30,8 @@ function handleIndex(request, response) {
 function handleStart(request, response) {
   var gameData = request.body
 
+  console.log(gameData)
+
   console.log('START')
   response.status(200).send('ok')
 }
@@ -35,8 +39,13 @@ function handleStart(request, response) {
 function handleMove(request, response) {
   var gameData = request.body
 
-  var possibleMoves = ['up', 'down', 'left', 'right']
-  var move = possibleMoves[Math.floor(Math.random() * possibleMoves.length)]
+  var move = shortestPath.determineDirection(
+    gameData.board.width,
+    gameData.board.height,
+    gameData.you.head,
+    gameData.board.food,
+    gameData.you.body,
+    gameData.board.snakes);
 
   console.log('MOVE: ' + move)
   response.status(200).send({
@@ -46,6 +55,8 @@ function handleMove(request, response) {
 
 function handleEnd(request, response) {
   var gameData = request.body
+
+  console.log(gameData)
 
   console.log('END')
   response.status(200).send('ok')
