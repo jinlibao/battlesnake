@@ -59,7 +59,7 @@ function shortestPathToFood(boardWidth, boardHeight, head, food, bodies, snakes)
   var cur = food;
   while (isInBound(cur.x, cur.y, boardWidth, boardHeight) && (predecessor[cur.x][cur.y].x != cur.x || predecessor[cur.x][cur.y].y != cur.y)) {
     shortestPath.push({x: cur.x, y: cur.y});
-    var newParent = {x: predecessor[cur.x][cur.y].x, y: predecessor[cur.x][cur.y].y}
+    var newParent = {x: predecessor[cur.x][cur.y].x, y: predecessor[cur.x][cur.y].y};
     cur.x = newParent.x;
     cur.y = newParent.y;
   }
@@ -120,7 +120,7 @@ function determineDirection(boardWidth, boardHeight, head, food, bodies, snakes)
     y0 = head.y;
     x1 = bestPath[0].x;
     y1 = bestPath[0].y;
-    console.log('from: (' + x0 + ', ' + y0 + ') to (' + x1 + ', ' + y1 + ')');
+    console.log('from (' + x0 + ', ' + y0 + ') to (' + x1 + ', ' + y1 + ')');
     if ((x0 - x1) == 0 && (y0 - y1) == 1) {
       move = 'down';
     } else if ((x0 - x1) == 0 && (y0 - y1) == -1) {
