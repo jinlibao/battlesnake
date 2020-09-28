@@ -1,13 +1,7 @@
 'use strict';
 const shortestPath = require('./shortestPath.js');
-const zfill = (num, places) => String(num).padStart(places, '0');
-const dataRootPath = '/media/libao/Files/data/battlesnake';
-const saveToFile = (dataRootPath, gameData) => {
-  const dataPath = dataRootPath + '/' + gameData.game.id;
-  const gameDataFile = dataPath + '/' + gameData.game.id + '_' + zfill(gameData.turn, 3) + '.json';
-  console.log('Saving gameData to ' + gameDataFile);
-  fs.writeFileSync(gameDataFile, JSON.stringify(gameData));
-}
+const util = require('./util.js');
+const root = '/media/libao/Files/data/battlesnake'
 
 const fs = require('fs');
 const bodyParser = require('body-parser');
@@ -30,9 +24,9 @@ function handleIndex(request, response) {
   var battlesnakeInfo = {
     apiversion: '1',
     author: 'Libao Jin & Yanbin Gong',
-    color: 'green',
-    head: 'default',
-    tail: 'default'
+    color: '#07F2DB',
+    head: 'bwc-ski',
+    tail: 'shac-mouse'
   };
   response.status(200).json(battlesnakeInfo);
 }
@@ -41,11 +35,7 @@ function handleStart(request, response) {
   var gameData = request.body;
 
   console.log(gameData);
-  const dataPath = dataRootPath + '/' + gameData.game.id;
-  if (!fs.existsSync(dataPath)) {
-    fs.mkdirSync(dataPath);
-  }
-  saveToFile(dataRootPath, gameData);
+  util.saveData(root, gameData);
 
   console.log('START');
   response.status(200).send('ok');
@@ -54,20 +44,21 @@ function handleStart(request, response) {
 function handleMove(request, response) {
   var gameData = request.body;
 
-  saveToFile(dataRootPath, gameData);
+  util.saveData(root, gameData);
 
   var move = shortestPath.determineDirection(
     gameData.board.width,
     gameData.board.height,
     gameData.you.head,
-    gameData.board.food,
     gameData.you.body,
+    gameData.board.food,
     gameData.board.snakes
   );
 
   console.log('MOVE: ' + move);
   response.status(200).send({
-    move: move
+    move: move,
+    shout: "Ummm... I am moving " + (move.length > 0 ? move : "nowhere. Oops") + "!"
   });
 }
 
@@ -75,7 +66,7 @@ function handleEnd(request, response) {
   var gameData = request.body;
 
   console.log(gameData);
-  saveToFile(dataRootPath, gameData);
+  util.saveData(root, gameData);
 
   console.log('END');
   response.status(200).send('ok');

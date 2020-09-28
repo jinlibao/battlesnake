@@ -27,9 +27,9 @@ function isInBound(x, y, boardWidth, boardHeight) {
   return x >= 0 && x < boardWidth && y >= 0 && y < boardHeight;
 }
 
-function shortestPathToFood(boardWidth, boardHeight, head, food, bodies, snakes) {
+function shortestPathToFood(boardWidth, boardHeight, head, body, food, snakes) {
   var predecessor = initializePredecessor(boardWidth, boardHeight);
-  var board = createBoard(boardWidth, boardHeight, bodies, snakes);
+  var board = createBoard(boardWidth, boardHeight, body, snakes);
   var dirs = [[-1, 0], [1, 0], [0, -1], [0, 1]];
   var queue = new Queue();
   queue.enqueue(head);
@@ -67,8 +67,8 @@ function shortestPathToFood(boardWidth, boardHeight, head, food, bodies, snakes)
   return shortestPath;
 }
 
-function shortestDistanceToFood(boardWidth, boardHeight, head, food, bodies, snakes) {
-  var board = createBoard(boardWidth, boardHeight, bodies, snakes);
+function shortestDistanceToFood(boardWidth, boardHeight, head, body, food, snakes) {
+  var board = createBoard(boardWidth, boardHeight, body, snakes);
   var dirs = [[-1, 0], [1, 0], [0, -1], [0, 1]];
   var queue = new Queue();
   queue.enqueue(head);
@@ -96,10 +96,10 @@ function shortestDistanceToFood(boardWidth, boardHeight, head, food, bodies, sna
   return dist;
 }
 
-function determineDirection(boardWidth, boardHeight, head, food, bodies, snakes) {
+function determineDirection(boardWidth, boardHeight, head, body, food, snakes) {
   var shortestPaths = new Array();
   for (var i = 0; i < food.length; ++i) {
-    var shortestPath = shortestPathToFood(boardWidth, boardHeight, head, food[i], bodies, snakes);
+    var shortestPath = shortestPathToFood(boardWidth, boardHeight, head, food[i], body, snakes);
     if (shortestPath.length > 0) {
       shortestPaths[shortestPaths.length] = shortestPath;
     }
@@ -132,7 +132,7 @@ function determineDirection(boardWidth, boardHeight, head, food, bodies, snakes)
     }
   } else {
     var dirsString = ['up', 'down', 'left', 'right'];
-    var board = createBoard(boardWidth, boardHeight, bodies, snakes);
+    var board = createBoard(boardWidth, boardHeight, body, snakes);
     var dirs = [[1, 0], [-1, 0], [0, -1], [0, 1]];
     for (var i = 0; i < dirs.length; ++i) {
       var nx = head.x + dirs[i][1];
@@ -146,48 +146,24 @@ function determineDirection(boardWidth, boardHeight, head, food, bodies, snakes)
   return move;
 }
 
-// var bodies = [{x: 0, y: 6}, {x: 0, y: 7}, {x: 0, y: 8}];
-// var head = bodies[0];
-// var snakes = [
-//   {
-//     body: [{x: 1, y: 7}, {x: 1, y: 8}],
-//     head: {x: 1, y: 7},
-//   },
-//   {
-//     body: [{x: 2, y: 7}, {x: 2, y: 8}],
-//     head: {x: 2, y: 7},
-//   },
-// ];
-
-// var snakes = [
-//   {
-//     body: [{x: 1, y: 6}, {x: 1, y: 7}, {x: 1, y: 8}],
-//     head: {x: 1, y: 6},
-//   },
-//   {
-//     body: [{x: 2, y: 6}, {x: 2, y: 7}, {x: 2, y: 8}],
-//     head: {x: 2, y: 6},
-//   },
-// ];
-// var food = [{x: 0, y: 10}, {x: 5, y: 5}];
+// test
+// const util = require('./util.js');
+// const root = '/media/libao/Files/data/battlesnake';
+// const root = 'test';
+// const gameId = '7548c3a4-117b-460b-960e-5ad401298c70';
+// const turn = '161';
+// const gameData = util.readData(root, gameId, turn);
+// console.log(gameData);
 //
-// var boardWidth = 11;
-// var boardHeight = 11;
-
-// var dist = shortestDistanceToFood(boardWidth, boardHeight, head, food[0], bodies, snakes);
+// var dist = shortestDistanceToFood(gameData.board.width, gameData.board.height, gameData.you.head, gameData.you.body, gameData.board.food[0], gameData.board.snakes);
 // console.log(dist);
-// var shortestPath = shortestPathToFood(boardWidth, boardHeight, head, food[0], bodies, snakes);
+// var shortestPath = shortestPathToFood(gameData.board.width, gameData.board.height, gameData.you.head, gameData.you.body, gameData.board.food[0], gameData.board.snakes);
 // console.log(shortestPath);
-// var dist = shortestDistanceToFood(boardWidth, boardHeight, head, food[1], bodies, snakes);
-// console.log(dist);
-// var shortestPath = shortestPathToFood(boardWidth, boardHeight, head, food[1], bodies, snakes);
+// var shortestPath = shortestPathToFood(gameData.board.width, gameData.board.height, gameData.you.head, gameData.you.body, gameData.board.food[1], gameData.board.snakes);
 // console.log(shortestPath);
-// var move = determineDirection(boardWidth, boardHeight, head, food, bodies, snakes);
+// var move = determineDirection(gameData.board.width, gameData.board.height, gameData.you.head, gameData.you.body, gameData.board.food, gameData.board.snakes);
 // console.log(move);
-// for (var i = 0; i < board.boardHeight; ++i) {
-//   for (var j = 0; j < board[i].boardHeight; ++j) {
-//     console.log(i + ',' + j + ': ' + board[i][j])
-//   }
-// }
+//
+// util.saveData(root, gameData);
 
 module.exports = {shortestPathToFood, shortestDistanceToFood, createBoard, initializePredecessor, determineDirection}
