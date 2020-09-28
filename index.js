@@ -1,6 +1,9 @@
 'use strict';
 const shortestPath = require('./shortestPath.js');
+const zeroPad = (num, places) => String(num).padStart(places, '0');
+const dataRootPath = '/media/libao/Files/data/battlesnake';
 
+const fs = require('fs');
 const bodyParser = require('body-parser');
 const express = require('express');
 
@@ -32,6 +35,13 @@ function handleStart(request, response) {
   var gameData = request.body;
 
   console.log(gameData);
+  const dataPath = dataRootPath + '/' + gameData.game.id;
+  if (!fs.existsSync(dataPath)) {
+    fs.mkdirSync(dataPath);
+  }
+  const gameDataFile = dataPath + '/' + gameData.game.id + '_' + zeroPad(gameData.turn, 3) + '.json';
+  console.log('Saving gameData to ' + gameDataFile);
+  fs.writeFileSync(gameDataFile, JSON.stringify(gameData));
 
   console.log('START');
   response.status(200).send('ok');
@@ -39,6 +49,11 @@ function handleStart(request, response) {
 
 function handleMove(request, response) {
   var gameData = request.body;
+
+  const dataPath = dataRootPath + '/' + gameData.game.id;
+  const gameDataFile = dataPath + '/' + gameData.game.id + '_' + zeroPad(gameData.turn, 3) + '.json';
+  console.log('Saving gameData to ' + gameDataFile);
+  fs.writeFileSync(gameDataFile, JSON.stringify(gameData));
 
   var move = shortestPath.determineDirection(
     gameData.board.width,
@@ -59,6 +74,10 @@ function handleEnd(request, response) {
   var gameData = request.body;
 
   console.log(gameData);
+  const dataPath = dataRootPath + '/' + gameData.game.id;
+  const gameDataFile = dataPath + '/' + gameData.game.id + '_' + zeroPad(gameData.turn, 3) + '.json';
+  console.log('Saving gameData to ' + gameDataFile);
+  fs.writeFileSync(gameDataFile, JSON.stringify(gameData));
 
   console.log('END');
   response.status(200).send('ok');
