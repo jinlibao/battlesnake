@@ -1,13 +1,13 @@
 const Queue = require('./Queue.js');  // http://code.iamkate.com/javascript/queues/#usingqueues
 
-function createBoard(boardWidth, boardHeight, bodies, snakes) {
+function createBoard(boardWidth, boardHeight, body, snakes) {
   var isBoardOccupied = new Array(boardWidth).fill(0).map(boardWidth => new Array(boardHeight).fill(false));
-  for (var body of bodies) {
-    isBoardOccupied[body.x][body.y] = true;
+  for (var i = 0; i < body.length - 1; ++i) {
+    isBoardOccupied[body[i].x][body[i].y] = true;
   }
   for (var snake of snakes) {
-    for (var body of snake.body) {
-      isBoardOccupied[body.x][body.y] = true;
+    for (var i = 0; i < snake.body.length - 1; ++i) {
+      isBoardOccupied[snake.body[i].x][snake.body[i].y] = true;
     }
   }
   return isBoardOccupied;
@@ -79,8 +79,8 @@ function shortestDistanceToFood(boardWidth, boardHeight, head, food, bodies, sna
     for (var i = 0; i < length && !isFoodReached; ++i) {
       var cur = queue.dequeue();
       for (var dir of dirs) {
-        var nx = cur.x + dir[0];
-        var ny = cur.y + dir[1];
+        var nx = cur.x + dir[1];
+        var ny = cur.y + dir[0];
         if (nx >= 0 && nx < boardWidth && ny >= 0 && ny < boardHeight && !board[nx][ny]) {
           if (nx == food.x && ny == food.y) {
             isFoodReached = true;
@@ -137,7 +137,7 @@ function determineDirection(boardWidth, boardHeight, head, food, bodies, snakes)
     for (var i = 0; i < dirs.length; ++i) {
       var nx = head.x + dirs[i][1];
       var ny = head.y + dirs[i][0];
-      if (isInBound(nx, ny, boardWidth, boardWidth) && !board[nx][ny]) {
+      if (isInBound(nx, ny, boardWidth, boardHeight) && !board[nx][ny]) {
         move = dirsString[i];
         break;
       }
