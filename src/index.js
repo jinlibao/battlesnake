@@ -1,9 +1,7 @@
 'use strict';
-const shortestPath = require('./shortestPath.js');
 const util = require('./util.js');
-const root = '/media/libao/Files/data/battlesnake'
+const root = '/media/libao/Files/data/battlesnake';
 
-const fs = require('fs');
 const bodyParser = require('body-parser');
 const express = require('express');
 
@@ -33,7 +31,6 @@ function handleIndex(request, response) {
 
 function handleStart(request, response) {
   var gameData = request.body;
-
   console.log(gameData);
   util.saveData(root, gameData);
 
@@ -46,7 +43,7 @@ function handleMove(request, response) {
 
   util.saveData(root, gameData);
 
-  var move = shortestPath.determineDirection(
+  var move = util.determineDirection(
     gameData.board.width,
     gameData.board.height,
     gameData.you.head,
@@ -55,10 +52,12 @@ function handleMove(request, response) {
     gameData.board.snakes
   );
 
-  console.log('MOVE: ' + move);
+  var moveString = (move.length > 0 ? move : "nowhere. Oops") + '!';
+  console.log(`Turn ${util.zfill(gameData.turn, 3)}: move ${moveString}`);
+
   response.status(200).send({
     move: move,
-    shout: "Ummm... I am moving " + (move.length > 0 ? move : "nowhere. Oops") + "!"
+    shout: "Ummm... I am moving " + moveString
   });
 }
 
@@ -66,7 +65,7 @@ function handleEnd(request, response) {
   var gameData = request.body;
 
   console.log(gameData);
-  util.saveData(root, gameData);
+  console.log('Saved data to ' + util.saveData(root, gameData));
 
   console.log('END');
   response.status(200).send('ok');
