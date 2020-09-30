@@ -49,7 +49,9 @@ function handleMove(request, response) {
     gameData.you.head,
     gameData.you.body,
     gameData.board.food,
-    gameData.board.snakes
+    gameData.board.snakes,
+    gameData.turn,
+    gameData.you.health,
   );
 
   var moveString = (move.length > 0 ? move : "nowhere. Oops") + '!';

@@ -31,14 +31,35 @@ function readData(root, gameId, turn) {
   return data;
 };
 
+function createBoard2(boardWidth, boardHeight, snakes) {
+  var dirs = [[-1, 0], [1, 0], [0, -1], [0, 1]];
+  var isBoardOccupied = new Array(boardWidth).fill(0).map(boardWidth => new Array(boardHeight).fill(false));
+  for (let snake of snakes) {
+    for (var i = 0; i < snake.body.length - 1; ++i) {
+      isBoardOccupied[snake.body[i].x][snake.body[i].y] = true;
+    }
+  }
+  return isBoardOccupied;
+}
+
 function createBoard(boardWidth, boardHeight, body, snakes) {
+  var dirs = [[-1, 0], [1, 0], [0, -1], [0, 1]];
   var isBoardOccupied = new Array(boardWidth).fill(0).map(boardWidth => new Array(boardHeight).fill(false));
   for (var i = 0; i < body.length - 1; ++i) {
     isBoardOccupied[body[i].x][body[i].y] = true;
   }
-  for (var snake of snakes) {
+  for (let snake of snakes) {
     for (var i = 0; i < snake.body.length - 1; ++i) {
       isBoardOccupied[snake.body[i].x][snake.body[i].y] = true;
+    }
+    if (body[0].x == snake.body[0].x && body[0].y == snake.body[0].y) continue;
+    if (body.length >= snake.body.length) continue;
+    for (let dir of dirs) {
+      var nx = snake.body[0].x + dir[1];
+      var ny = snake.body[0].y + dir[0];
+      if (isInBound(nx, ny, boardWidth, boardHeight)) {
+        isBoardOccupied[nx][ny] = true;
+      }
     }
   }
   return isBoardOccupied;
@@ -142,7 +163,21 @@ function createUnionFindSet(boardWidth, boardHeight, body, snakes) {
   return result;
 }
 
-function determineDirection(boardWidth, boardHeight, head, body, food, snakes) {
+function coordinateToDirection(x0, y0, x1, y1) {
+  move = '';
+  if ((x0 - x1) == 0 && (y0 - y1) == 1) {
+    move = 'down';
+  } else if ((x0 - x1) == 0 && (y0 - y1) == -1) {
+    move = 'up';
+  } else if ((x0 - x1) == 1 && (y0 - y1) == 0) {
+    move = 'left';
+  } else if ((x0 - x1) == -1 && (y0 - y1) == 0) {
+    move = 'right';
+  }
+  return move;
+}
+
+function determineDirection(boardWidth, boardHeight, head, body, food, snakes, turn, health) {
   var result = createUnionFindSet(boardWidth, boardHeight, body, snakes);
   var rawBoard = createBoard(boardWidth, boardHeight, body, snakes);
   var uf = result.uf;
@@ -150,63 +185,101 @@ function determineDirection(boardWidth, boardHeight, head, body, food, snakes) {
   var paths = [];
   for (var i = 0; i < food.length; ++i) {
     var board = copy(rawBoard);
+    if (board[food[i].x][food[i].y]) continue;
     var path = bfs(boardWidth, boardHeight, board, head, food[i]);
     paths.push(path);
   }
-  var bestPath = paths.length > 0 ? paths[0] : [];
-  var minDist = bestPath.length;
+  var board = copy(rawBoard);
+  for (var i = 1; i < Math.min(body.length - 2, Math.min(turn, 1)); ++i) {
+    board[body[body.length - i].x][body[body.length - i].y] = false;
+  }
+  var pathToTail = bfs(boardWidth, boardHeight, board, head, body[body.length - 1]);
+
+  var bestPath = [];
+  var minDist = boardWidth * boardHeight;
   for (var i = 0; i < paths.length; ++i) {
-    if (minDist > paths[i].length) {
+    if (paths[i].length >= 1 && minDist > paths[i].length) {
       minDist = paths[i].length;
       bestPath = paths[i];
     }
   }
+  var tail = body[body.length - 1];
   var move = '';
   if (bestPath.length >= 1) {
-    x0 = head.x;
-    y0 = head.y;
-    x1 = bestPath[0].x;
-    y1 = bestPath[0].y;
-    if (uf.getSize(to1D(x1, y1, boardWidth, boardHeight)) > body.length) {
-      // console.log('from (' + x0 + ', ' + y0 + ') to (' + x1 + ', ' + y1 + ')');
-      if (snakes.length <= 1 || isSafe(x1, y1, head, body, snakes)) {
-        if ((x0 - x1) == 0 && (y0 - y1) == 1) {
-          move = 'down';
-        } else if ((x0 - x1) == 0 && (y0 - y1) == -1) {
-          move = 'up';
-        } else if ((x0 - x1) == 1 && (y0 - y1) == 0) {
-          move = 'left';
-        } else if ((x0 - x1) == -1 && (y0 - y1) == 0) {
-          move = 'right';
+    var nx = bestPath[0].x;
+    var ny = bestPath[0].y;
+    if (uf.getSize(to1D(nx, ny, boardWidth, boardHeight)) >= body.length
+      || uf.connected(to1D(nx, ny, boardWidth, boardHeight), to1D(tail.x, tail.y, boardWidth, boardHeight))) {
+      if (snakes.length <= 1 || isSafe(nx, ny, head, body, snakes)) {
+        move = coordinateToDirection(head.x, head.y, nx, ny);
+        console.log('0')
+      }
+    }
+  }
+  var dirs = [[1, 0], [-1, 0], [0, -1], [0, 1]];
+  if (move.length == 0) {
+    var curSizeMax = -1;
+    for (let dir of dirs) {
+      var nx = head.x + dir[1];
+      var ny = head.y + dir[0];
+      var curSize = uf.getSize(to1D(nx, ny, boardWidth, boardHeight));
+      if (isInBound(nx, ny, boardWidth, boardHeight) && !rawBoard[nx][ny]) {
+        if ((snakes.length <= 1 || isSafe(nx, ny, head, body, snakes)) && curSize > body.length) {
+          if (curSizeMax < curSize) {
+            move = coordinateToDirection(head.x, head.y, nx, ny);
+            console.log('1')
+            curSizeMax = curSize;
+          } else if (snakes.length == 1) {
+            if (curSizeMax < curSize) {
+              move = coordinateToDirection(head.x, head.y, nx, ny);
+              curSizeMax = curSize;
+            }
+          }
+        }
+      }
+    }
+    if (move.length == 0) {
+      if (pathToTail.length >= 1) {
+        var x = pathToTail[0].x;
+        var y = pathToTail[0].y;
+        if (uf.getSize(to1D(x, y, boardWidth, boardHeight)) < body.length) {
+          print(x + ',' + y)
+          print(rawBoard[x][y]);
+          if ((snakes.length <= 1 || isSafe(x, y, head, body, snakes)) && !rawBoard[x][y]) {
+            move = coordinateToDirection(head.x, head.y, x, y);
+            console.log('2')
+          }
         }
       }
     }
   }
-  var checkedSafety = 0;
-  var checkedConnectedComponent = 0;
-  var repeat = 0;
-  while (move.length == 0 && repeat++ < 5) {
-    var dirsString = ['up', 'down', 'left', 'right'];
-    var board = createBoard(boardWidth, boardHeight, body, snakes);
-    var dirs = [[1, 0], [-1, 0], [0, -1], [0, 1]];
-    var ccSize = -1;
-    for (var i = 0; i < dirs.length; ++i) {
-      var nx = head.x + dirs[i][1];
-      var ny = head.y + dirs[i][0];
+  if (move.length == 0) {
+    var curSizeMax = -1;
+    for (let dir of dirs) {
+      var nx = head.x + dir[1];
+      var ny = head.y + dir[0];
+      var curSize = uf.getSize(to1D(nx, ny, boardWidth, boardHeight));
+      if (isInBound(nx, ny, boardWidth, boardHeight) && !rawBoard[nx][ny]) {
+        if (curSizeMax < curSize) {
+          move = coordinateToDirection(head.x, head.y, nx, ny);
+          console.log('3')
+          curSizeMax = curSize;
+        }
+      }
+    }
+  }
+  if (move.length == 0) {
+    var board = createBoard2(boardWidth, boardHeight, snakes);
+    var curSizeMax = -1;
+    for (let dir of dirs) {
+      var nx = head.x + dir[1];
+      var ny = head.y + dir[0];
+      var curSize = uf.getSize(to1D(nx, ny, boardWidth, boardHeight));
       if (isInBound(nx, ny, boardWidth, boardHeight) && !board[nx][ny]) {
-        var curSize = uf.getSize(uf.find(to1D(nx, ny, boardWidth, boardHeight)));
-        if (checkedSafety++ < 4) {
-          if ((snakes.length <= 1 || isSafe(nx, ny, head, body, snakes)) && curSize > ccSize) {
-            move = dirsString[i];
-            ccSize = curSize;
-          }
-        } else if (checkedConnectedComponent++ < 4){
-          if (curSize > ccSize) {
-            move = dirsString[i];
-            ccSize = curSize;
-          }
-        } else {
-          move = dirsString[i];
+        if (curSizeMax < curSize) {
+          move = coordinateToDirection(head.x, head.y, nx, ny);
+          console.log('4')
+          curSizeMax = curSize;
         }
       }
     }
@@ -223,29 +296,58 @@ const turn        = '10';
 const root        = 'test';
 const gameId      = '8a057e28-519d-4953-8663-ab1e9808bd79';
 const turn        = '42';
-const root        = '/media/libao/Files/data/battlesnake';
+const gameId      = '8474d185-fe35-43c1-829a-6a81e6707dc8';
+const turn        = '46';
 const gameId      = 'e6b362ab-873c-4ae4-acd7-4bcce9212fce';
-const turn        = '0';
+const turn        = '40';
+const gameId      = 'b2c0066d-ee01-432a-8a42-f41dde762844';
+const turn        = '6';
+const gameId      = '901413fa-3e27-45c0-8d83-c9ca5635ae1f';
+const turn        = '176';
+const gameId      = '629f9dc9-fa85-4033-9ee2-c5b456284bf8';
+const turn        = '221';
+const gameId      = '4f5d5d52-0c64-4181-91e2-22808d9e02e3';
+const turn        = '232';
+const gameId      = 'af21cdd2-76d2-483a-a7b4-7e394b3dabbe';
+const turn        = '76';
+const gameId      = '6d675727-d372-40a2-aead-2ca9e6b23c8f';
+const turn        = '140';
+const gameId      = '6d60878a-4764-47a9-b8bc-86b34bc76907';
+const turn        = 149;
+const gameId      = '608862eb-d36e-4496-9ea6-aa4e11aed3de';
+const turn        = 71;
+const gameId      = 'c79dca38-4903-4e6b-824a-94f7013df1b7';
+const turn        = 172;
+const gameId      = '932f1df7-ca68-4127-b794-8ce661ed2ef1';
+const turn        = 227;
+const gameId      = '40256b2c-a4d6-4695-bfe4-54d8b434534b';
+const turn        = 131;
+const root        = '/media/libao/Files/data/battlesnake';
+const gameId      = 'c6337038-60fa-429c-8d75-df998669fac1';
+const turn        = 96;
 const gameData    = readData(root, gameId, turn);
 const boardWidth  = gameData.board.width;
 const boardHeight = gameData.board.height;
 const head        = gameData.you.head;
 const body        = gameData.you.body;
+const health      = gameData.you.health;
 const food        = gameData.board.food;
 const snakes      = gameData.board.snakes;
+
+var move = determineDirection(boardWidth, boardHeight, head, body, food, snakes, turn, health);
+console.log(`move: ${move}`);
+
+/*
 const from        = head;
 const dest        = food[0];
 const board       = createBoard(boardWidth, boardHeight, body, snakes);
-print(gameData);
-
-var path = bfs(boardWidth, boardHeight, board, from, dest);
+const path = bfs(boardWidth, boardHeight, board, from, dest);
 console.log(`from: ${JSON.stringify(from)}`);
 console.log(`dest: ${JSON.stringify(dest)}`);
 console.log(`path: ${JSON.stringify(path)}`);
+*/
 
-var move = determineDirection(boardWidth, boardHeight, head, body, food, snakes);
-console.log(`move: ${move}`);
-
+/*
 // test UnionFind
 var x1 = 8, x2 = 8, y1 = 4, y2 = 6;
 console.log(food);
